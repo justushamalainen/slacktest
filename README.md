@@ -1,6 +1,6 @@
 # Thinking Bot - Simple Distributed Slack App
 
-A minimal distributed Slack app that responds with "thinking" to app mentions and direct messages. Built with Flask, SQLite, and the Slack SDK.
+A minimal distributed Slack app that responds with "thinking" to app mentions and direct messages. Built with Flask, supports both SQLite and PostgreSQL, and uses the Slack SDK.
 
 ## Features
 
@@ -8,7 +8,8 @@ A minimal distributed Slack app that responds with "thinking" to app mentions an
 - Encrypted token storage using AES-GCM
 - Responds to app mentions with "thinking"
 - Responds to direct messages with "thinking"
-- SQLite database for local development
+- Supports both SQLite and PostgreSQL databases
+- SQLite for local development, PostgreSQL for production
 - Event signature verification
 - Debug endpoints for development
 
@@ -18,13 +19,14 @@ A minimal distributed Slack app that responds with "thinking" to app mentions an
 slack-app/
 ├── app.py                    # Main Flask application
 ├── config.py                 # Configuration management
-├── database.py               # Database models and operations
+├── database.py               # Database models and operations (SQLite + PostgreSQL)
 ├── oauth_handler.py          # OAuth flow implementation
 ├── event_handler.py          # Slack event handlers
 ├── requirements.txt          # Python dependencies
 ├── .env.example              # Example environment variables
 ├── .env                      # Your actual secrets (gitignored)
-├── schema.sql                # Database schema
+├── schema.sql                # Database schema (SQLite)
+├── schema_postgres.sql       # Database schema (PostgreSQL)
 ├── data/                     # SQLite database directory
 │   └── .gitkeep
 └── README.md                 # This file
@@ -35,6 +37,7 @@ slack-app/
 - Python 3.8+
 - ngrok (for local development)
 - A Slack workspace where you can create apps
+- PostgreSQL (optional, for production deployment)
 
 ## Setup Instructions
 
@@ -73,8 +76,39 @@ python -c "import secrets; print(secrets.token_hex(32))"
 # - SLACK_CLIENT_SECRET
 # - SLACK_SIGNING_SECRET
 # - ENCRYPTION_KEY (from the command above)
+# - DATABASE_TYPE (sqlite or postgres)
 # - PUBLIC_URL (will be set after ngrok starts)
 ```
+
+#### Database Configuration
+
+The app supports both SQLite and PostgreSQL:
+
+**For SQLite (recommended for local development):**
+```bash
+DATABASE_TYPE=sqlite
+DATABASE_PATH=./data/slack_app.db
+```
+
+**For PostgreSQL (recommended for production):**
+```bash
+DATABASE_TYPE=postgres
+DATABASE_URL=postgresql://user:password@localhost:5432/slackapp
+```
+
+Create a PostgreSQL database:
+```bash
+# Connect to PostgreSQL
+psql -U postgres
+
+# Create database
+CREATE DATABASE slackapp;
+
+# Exit psql
+\q
+```
+
+The schema will be automatically created when the app starts.
 
 ### 4. Start ngrok
 
@@ -174,19 +208,31 @@ Environment: development
 
 ## Database
 
-The app uses SQLite for local development. The database includes:
+The app supports both SQLite and PostgreSQL. SQLite is recommended for local development, while PostgreSQL is recommended for production.
+
+The database includes:
 
 - `installations` - Stores encrypted bot tokens per workspace
 - `event_log` - Logs events for debugging
 
 **Useful queries:**
 
+**For SQLite:**
 ```bash
 # View all installations
 sqlite3 data/slack_app.db "SELECT * FROM installations;"
 
 # View recent events
 sqlite3 data/slack_app.db "SELECT * FROM event_log ORDER BY created_at DESC LIMIT 10;"
+```
+
+**For PostgreSQL:**
+```bash
+# View all installations
+psql -U postgres -d slackapp -c "SELECT * FROM installations;"
+
+# View recent events
+psql -U postgres -d slackapp -c "SELECT * FROM event_log ORDER BY created_at DESC LIMIT 10;"
 ```
 
 ## Debugging
@@ -232,12 +278,22 @@ sqlite3 data/slack_app.db "SELECT * FROM event_log ORDER BY created_at DESC LIMI
 For production deployment:
 
 1. Generate a new encryption key
-2. Use PostgreSQL instead of SQLite
+2. **Switch to PostgreSQL**:
+   - Set `DATABASE_TYPE=postgres` in your environment
+   - Set `DATABASE_URL` to your PostgreSQL connection string
+   - The app will automatically use the PostgreSQL schema
 3. Set up proper logging (not just print statements)
 4. Use Redis for state storage instead of in-memory
 5. Add background task processing for events
 6. Enable HTTPS with proper certificates
 7. Update Slack app configuration with production URLs
+
+**Example production environment variables:**
+```bash
+DATABASE_TYPE=postgres
+DATABASE_URL=postgresql://user:password@db-host:5432/slackapp
+FLASK_ENV=production
+```
 
 ## Architecture
 

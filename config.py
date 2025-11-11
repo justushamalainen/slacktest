@@ -16,7 +16,11 @@ class Config:
     # App settings
     FLASK_ENV = os.getenv('FLASK_ENV', 'development')
     PORT = int(os.getenv('PORT', 3000))
-    DATABASE_PATH = os.getenv('DATABASE_PATH', './data/slack_app.db')
+
+    # Database settings
+    DATABASE_TYPE = os.getenv('DATABASE_TYPE', 'sqlite')  # 'sqlite' or 'postgres'
+    DATABASE_PATH = os.getenv('DATABASE_PATH', './data/slack_app.db')  # For SQLite
+    DATABASE_URL = os.getenv('DATABASE_URL')  # For PostgreSQL
 
     # Security
     ENCRYPTION_KEY = bytes.fromhex(os.getenv('ENCRYPTION_KEY', '')) if os.getenv('ENCRYPTION_KEY') else None
